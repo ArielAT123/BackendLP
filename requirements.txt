@@ -1,0 +1,27 @@
+# Django Framework
+Django==5.2.6
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+django-filter==25.1
+
+# JWT Authentication
+
+# Database
+dj-database-url==3.0.1
+
+# Environment Variables
+python-dotenv==1.1.1
+
+# Server
+gunicorn==23.0.0
+asgiref==3.9.2
+
+
+# HTTP Requests
+requests==2.32.5
+urllib3==2.5.0
+certifi==2025.8.3
+idna==3.10
+
+# Utilities
+pytz==2025.2
