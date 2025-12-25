@@ -15,7 +15,23 @@ from .models import User
     #     # Contraseña incorrecta
 
 #REGISTER_CLIENT //Ayman
+@api_view(['POST'])
+def register_client(request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+    name = request.data.get('name')
+    direction = request.data.get('direction')
+    phone_number = request.data.get('phone_number')
 
+    hashus_password = make_password(password)
+    user = User.objects.create(
+        email=email, 
+        password=hashus_password,  # Guardamos la contraseña hasheada
+        name=name,
+        direction=direction, 
+        phone_number=phone_number
+    )
+    return Response({'message': 'Client registered successfully'}, status=status.HTTP_201_CREATED)
 
 
 #VENDOR_REGISTER // Ariel
