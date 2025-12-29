@@ -31,3 +31,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'vendor_name',
             'tags'
         ]
+
+class ProductStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['status']
