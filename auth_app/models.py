@@ -4,10 +4,17 @@ from django.db import models
 class User(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=100)
-    direction = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=100) 
-    isVendor = models.BooleanField(default=False)
+    password = models.CharField(max_length=128)
+
+    is_vendor = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "users"
     class Meta:
         db_table = "users"
 
@@ -36,12 +43,12 @@ class Tag(models.Model):
         db_table = "tags"
 
 class Product(models.Model):
-    id_product = models.CharField(max_length = 100)
+    id_product = models.CharField(max_length = 100, unique = True)
     name_product = models.CharField(max_length=100)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField()
-    vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="products")
+    vendor = models.ForeignKey(User, on_delete=models.CASCADE, db_column="vendor_id", related_name="products")
     tags = models.ManyToManyField(
         Tag,
         related_name="products",

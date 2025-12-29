@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/auth/", include("auth_app.urls")),
     path("api/products/", include("products_app.urls")),
+    path("api/ventas/", include("ventas_app.urls")) #solo para que se vea el backend
 ]
