@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from auth_app.models import Product, Tag
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, CreateProductSerializer
 from rest_framework.permissions import IsAuthenticated
 from .serializers import ProductStatusSerializer
 
@@ -110,3 +110,40 @@ class UpdateProductStatusView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class AddProductView(APIView):
+    """
+    Vista para agregar un nuevo producto asociado a un vendedor.
+    POST /api/products/add/
+    
+    Body esperado:
+    {
+        "id_product": "PROD-001",
+        "name_product": "Laptop Gaming",
+        "description": "Laptop para gaming",
+        "price": 1500.00,
+        "stock": 10,
+        "vendor_id": 1,
+        "tags": ["gaming", "laptop"]  // opcional
+    }
+    """
+    
+    def post(self, request):
+        serializer = CreateProductSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            product = serializer.save()
+            return Response({
+                "message": "Producto creado exitosamente",
+                "product": {
+                    "id": product.id,
+                    "id_product": product.id_product,
+                    "name_product": product.name_product,
+                    "price": str(product.price),
+                    "stock": product.stock,
+                    "vendor": product.vendor.name,
+                    "tags": [tag.name for tag in product.tags.all()]
+                }
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
