@@ -10,7 +10,11 @@ from django.db.models import F, Sum
 # Create your views here
 @api_view(['POST'])
 def create_cart(request):
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+    user_id = request.data.get('user_id')
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=400)
+    
+    cart, _ = Cart.objects.get_or_create(user_id=user_id)
 
     items = [
         {
@@ -24,13 +28,17 @@ def create_cart(request):
 
     return JsonResponse({"items": items})
 
+@api_view(['POST'])
 def add_to_cart(request):
-    user = request.user
+    user_id = request.data.get("user_id")
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=400)
+    
     product_id = request.data.get("product_id")
     quantity = int(request.data.get("quantity", 1))
 
     # 1️⃣ Obtener o crear carrito
-    cart, _ = Cart.objects.get_or_create(user=user)
+    cart, _ = Cart.objects.get_or_create(user_id=user_id)
 
     # 2️⃣ Obtener producto
     try:
@@ -76,7 +84,11 @@ def add_to_cart(request):
 
 @api_view(['GET'])
 def get_totalcarro(request):
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+    user_id = request.query_params.get('user_id')
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=400)
+    
+    cart, _ = Cart.objects.get_or_create(user_id=user_id)
     total = sum(item.price * item.quantity for item in cart.items.all())
     return JsonResponse({"total": float(total)})
 

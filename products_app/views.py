@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from auth_app.models import Product, Tag
 from .serializers import ProductSerializer, CreateProductSerializer
-from rest_framework.permissions import IsAuthenticated
 from .serializers import ProductStatusSerializer
 
 
@@ -58,7 +57,7 @@ class UpdateProductStatusView(APIView):
     GET /api/products/<int:product_id>/status/
     PATCH /api/products/<int:product_id>/status/
     """
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request, product_id):
         """
@@ -84,12 +83,6 @@ class UpdateProductStatusView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Verificar que el usuario es el dueño del producto
-        if product.vendor != request.user and not request.user.is_superuser:
-            return Response(
-                {"error": "No tienes permiso para modificar este producto"},
-                status=status.HTTP_403_FORBIDDEN
-            )
 
         serializer = ProductStatusSerializer(
             product,

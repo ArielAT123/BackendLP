@@ -18,8 +18,29 @@ class User(models.Model):
 
     class Meta:
         db_table = "users"
+
+class Store(models.Model):
+    """
+    Modelo de tienda asociado a un vendedor.
+    Cada vendedor tiene una única tienda.
+    """
+    vendor = models.OneToOneField(
+        'User',
+        on_delete=models.CASCADE,
+        related_name="store",
+        limit_choices_to={"is_vendor": True}
+    )
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, default="")
+    logo = models.URLField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
     class Meta:
-        db_table = "users"
+        db_table = "stores"
 
 class Tag(models.Model):
     TAG_CHOICES = [
