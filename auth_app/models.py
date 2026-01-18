@@ -33,6 +33,8 @@ class Store(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, default="")
     logo = models.URLField(null=True, blank=True)
+    direction = models.CharField(max_length=300, blank=True, default="")
+    phone_number = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -98,6 +100,8 @@ class Product(models.Model):
         related_name="products",
         blank=True
     )
+
+    img = models.URLField(null=True, blank=True)
 
     class Meta:
         db_table = "products"

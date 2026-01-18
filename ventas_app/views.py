@@ -1,11 +1,12 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 import requests
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order, OrderItem
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from auth_app.models import Product, Tag
 from django.db.models import F, Sum
+from django.db import transaction
 
 # Create your views here
 @api_view(['POST'])
@@ -21,7 +22,8 @@ def create_cart(request):
             "product": item.product.name_product,
             "quantity": item.quantity,
             "price": float(item.price),
-            "subtotal": float(item.price * item.quantity)
+            "subtotal": float(item.price * item.quantity),
+            "img": item.product.img
         }
         for item in cart.items.all()
     ]
@@ -76,7 +78,8 @@ def add_to_cart(request):
             "cart_item": {
                 "product": product.name_product,
                 "quantity": cart_item.quantity,
-                "price": str(cart_item.price)
+                "price": str(cart_item.price),
+                "img": product.img
             }
         },
         status=201
@@ -100,3 +103,73 @@ def get_total(cart_id):
         .get("total") or 0
     )
     return total
+
+
+@api_view(['POST'])
+def checkout(request):
+    """
+    Procesa el carrito y crea una orden de compra.
+    POST /api/ventas/checkout/
+    Body: { "user_id": 1 }
+    """
+    user_id = request.data.get('user_id')
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=400)
+    
+    # Obtener carrito
+    try:
+        cart = Cart.objects.get(user_id=user_id)
+    except Cart.DoesNotExist:
+        return Response({"error": "Cart not found"}, status=404)
+    
+    cart_items = cart.items.select_related('product', 'product__vendor').all()
+    
+    if not cart_items.exists():
+        return Response({"error": "Cart is empty"}, status=400)
+    
+    # Calcular total
+    total = sum(item.price * item.quantity for item in cart_items)
+    
+    # Crear orden dentro de una transacción
+    with transaction.atomic():
+        # Crear la orden
+        order = Order.objects.create(
+            user_id=user_id,
+            total=total,
+            status="COMPLETADO"
+        )
+        
+        # Crear los items de la orden agrupados por vendedor
+        order_items_data = []
+        for item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                vendor=item.product.vendor,
+                quantity=item.quantity,
+                price=item.price
+            )
+            order_items_data.append({
+                "product_id": item.product.id,
+                "product_name": item.product.name_product,
+                "img": item.product.img,
+                "vendor_id": item.product.vendor.id,
+                "vendor_name": item.product.vendor.name,
+                "quantity": item.quantity,
+                "price": str(item.price),
+                "subtotal": str(item.price * item.quantity)
+            })
+        
+        # Vaciar el carrito
+        cart.items.all().delete()
+    
+    return Response({
+        "message": "Compra realizada exitosamente",
+        "order": {
+            "id": order.id,
+            "total": str(order.total),
+            "status": order.status,
+            "created_at": order.created_at.isoformat(),
+            "items": order_items_data
+        }
+    }, status=201)

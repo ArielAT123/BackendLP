@@ -87,8 +87,8 @@ def register_vendor(request):
     email = request.data.get('email')
     password = request.data.get('password')
     name = request.data.get('name')
-    direction = request.data.get('direction')
-    phone_number = request.data.get('phone_number')
+    direction = request.data.get('direction', '')
+    phone_number = request.data.get('phone_number', '')
     
     # Datos de la tienda
     store_name = request.data.get('store_name', name)  # Por defecto usa el nombre del vendor
@@ -98,32 +98,60 @@ def register_vendor(request):
     # Hash de la contraseña antes de guardarla
     hashed_password = make_password(password)
     
-    # Crear el usuario como vendor
-    user = User.objects.create(
-        email=email, 
-        password=hashed_password,
-        name=name,
-        direction=direction, 
-        phone_number=phone_number, 
-        is_vendor=True
-    )
-    
-    # Crear la tienda asociada al vendor
-    store = Store.objects.create(
-        vendor=user,
-        name=store_name,
-        description=store_description,
-        logo=store_logo
-    )
+    # Verificar si el usuario ya existe
+    try:
+        user = User.objects.get(email=email)
+        # Usuario existe, actualizar datos
+        user.name = name
+        user.password = hashed_password
+        user.is_vendor = True
+        user.save()
+        
+        # Actualizar o crear tienda
+        store, created = Store.objects.update_or_create(
+            vendor=user,
+            defaults={
+                'name': store_name,
+                'description': store_description,
+                'logo': store_logo,
+                'direction': direction,
+                'phone_number': phone_number
+            }
+        )
+        
+        message = 'Vendor updated successfully'
+        
+    except User.DoesNotExist:
+        # Usuario no existe, crear nuevo
+        user = User.objects.create(
+            email=email, 
+            password=hashed_password,
+            name=name,
+            is_vendor=True
+        )
+        
+        # Crear la tienda asociada al vendor
+        store = Store.objects.create(
+            vendor=user,
+            name=store_name,
+            description=store_description,
+            logo=store_logo,
+            direction=direction,
+            phone_number=phone_number
+        )
+        
+        message = 'Vendor registered successfully'
     
     return Response({
-        'message': 'Vendor registered successfully',
+        'message': message,
         'vendor_id': user.id,
         'store': {
             'id': store.id,
             'name': store.name,
             'description': store.description,
-            'logo': store.logo
+            'logo': store.logo,
+            'direction': store.direction,
+            'phone_number': store.phone_number
         }
     }, status=status.HTTP_201_CREATED)
 
@@ -151,3 +179,62 @@ class VendorProfileView(APIView):
         }
 
         return Response(profile_data)
+
+
+# -----------------------------------
+# USER PROFILE (con productos)
+# -----------------------------------
+class UserProfileView(APIView):
+    """
+    Muestra el perfil completo de un usuario, incluyendo sus productos si es vendedor.
+    GET /api/auth/profile/<user_id>/
+    """
+    def get(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=404)
+
+        # Datos básicos del usuario
+        profile_data = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "is_vendor": user.is_vendor,
+        }
+
+        # Si es vendedor, incluir tienda y productos
+        if user.is_vendor:
+            # Datos de la tienda
+            try:
+                store = user.store
+                profile_data["store"] = {
+                    "id": store.id,
+                    "name": store.name,
+                    "description": store.description,
+                    "logo": store.logo
+                }
+            except Store.DoesNotExist:
+                profile_data["store"] = None
+
+            # Productos del vendedor
+            from auth_app.models import Product
+            products = Product.objects.filter(vendor=user).prefetch_related('tags')
+            profile_data["products"] = [
+                {
+                    "id": product.id,
+                    "id_product": product.id_product,
+                    "name_product": product.name_product,
+                    "description": product.description,
+                    "price": str(product.price),
+                    "stock": product.stock,
+                    "status": product.status,
+                    "img": product.img,
+                    "tags": [tag.name for tag in product.tags.all()]
+                }
+                for product in products
+            ]
+            profile_data["products_count"] = products.count()
+
+        return Response(profile_data)
+

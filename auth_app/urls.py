@@ -5,4 +5,5 @@ urlpatterns = [
     path('register_client/', views.register_client, name='register_client'),
     path('register_vendor/', views.register_vendor, name='register_vendor'),
     path('vendors/<int:vendor_id>/', views.VendorProfileView.as_view(), name='vendor_profile'),
+    path('profile/<int:user_id>/', views.UserProfileView.as_view(), name='user_profile'),
 ]

@@ -134,6 +134,7 @@ class AddProductView(APIView):
                     "name_product": product.name_product,
                     "price": str(product.price),
                     "stock": product.stock,
+                    "img": product.img,
                     "vendor": product.vendor.name,
                     "tags": [tag.name for tag in product.tags.all()]
                 }

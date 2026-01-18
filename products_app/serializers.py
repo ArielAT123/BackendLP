@@ -28,6 +28,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'description',
             'price',
             'stock',
+            'img',
             'vendor_name',
             'tags'
         ]
@@ -55,6 +56,7 @@ class CreateProductSerializer(serializers.ModelSerializer):
             'description',
             'price',
             'stock',
+            'img',
             'vendor_id',
             'tags'
         ]
